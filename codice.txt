@@ -1,0 +1,70 @@
+#define BLYNK_TEMPLATE_ID "TMPL4Rf0UK3H7"
+#define BLYNK_TEMPLATE_NAME "Prova app"
+#define BLYNK_AUTH_TOKEN "vSOkpKJULfd_a_E_mablWobOu83fPi-Q"
+
+#define BLYNK_PRINT Serial
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+#include <DHT.h>
+#define DHTPIN 4
+#define MPin 34
+BlynkTimer timer;
+
+char auth[] = BLYNK_AUTH_TOKEN;
+
+char ssid[] = "";  // type your wifi name
+char pass[] = "";  // type your wifi password
+
+#define DHTTYPE DHT11  
+#define rainS 21
+int flag=0;
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void sensorData(){
+  int valueM = analogRead(MPin);
+   int moisture = map(valueM, 4095, 0, 0, 100);
+   float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  int isRaining = digitalRead(rainS);
+  Serial.print("Temperature");
+  Serial.println(temperature);
+  Serial.print("Humidity");
+  Serial.println(humidity);
+  if (!isnan(temperature) && !isnan(humidity))
+  {
+    Blynk.virtualWrite(V0, temperature);
+    Blynk.virtualWrite(V1, humidity);
+  }
+  else
+  {
+    Serial.println("Failed to read data from DHT sensor!");
+  }
+   Blynk.virtualWrite(V2, moisture);
+
+     if (isRaining==0 && flag==0) {
+    Serial.println("Its Raining");
+     Blynk.logEvent("rain_alert","Its Raining");
+    flag=1;
+  }
+  else if (isRaining==1)
+  {
+    flag=0;
+  }
+}
+
+
+void setup() {
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  pinMode(MPin, INPUT);
+  dht.begin();
+  pinMode(rainS, INPUT);
+  
+  timer.setInterval(3000L, sensorData);
+}
+
+void loop() {
+   Blynk.run();
+   timer.run();
+}
